@@ -276,11 +276,11 @@ class ONet(_Net):
         self.body = nn.Sequential(OrderedDict([
             ('conv1', nn.Conv2d(3, 32, kernel_size=3, stride=1)),
             ('prelu1', nn.PReLU(32)),
-            ('pool1', nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True)),
+            ('pool1', nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)),
 
             ('conv2', nn.Conv2d(32, 64, kernel_size=3, stride=1)),
             ('prelu2', nn.PReLU(64)),
-            ('pool2', nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True)),
+            ('pool2', nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)),
 
             ('conv3', nn.Conv2d(64, 64, kernel_size=3, stride=1)),
             ('prelu3', nn.PReLU(64)),
@@ -304,10 +304,6 @@ class ONet(_Net):
         self.box_offset = nn.Sequential(OrderedDict([
             ('conv6-2', nn.Linear(256, 4))
         ])) 
-        # lanbmark localization
-        self.landmarks = nn.Sequential(OrderedDict([
-            ('conv6-3', nn.Linear(256, 10))
-        ])) 
 
     def forward(self, x):
         # backend
@@ -319,10 +315,7 @@ class ONet(_Net):
         # box regression
         box = self.box_offset(x)
 
-        # landmarks regresion
-        landmarks = self.landmarks(x)
-
-        return det, box, landmarks
+        return det, box
 
     def to_script(self):
         data = torch.randn((100, 3, 48, 48), device=self.device)

@@ -278,7 +278,7 @@ class FaceDetector(object):
         candidate_faces = torch.cat(candidate_faces, 0)
 
         # rnet forward pass
-        p_distribution, box_regs, _ = self.rnet(candidate_faces)
+        p_distribution, box_regs = self.rnet(candidate_faces)
 
         # filter negative boxes
         scores = p_distribution[:, 1]
