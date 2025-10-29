@@ -1,0 +1,8 @@
+torch
+numpy
+opencv-python
+easydict
+Cython
+progressbar2
+tensorboardX
+pandas

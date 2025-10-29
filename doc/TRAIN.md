@@ -42,7 +42,7 @@ python scripts/train_pnet.py -e 10 -b 256 -o output/pnet.torchm -dv cuda:0 -r Tr
 ```
 Generate training data for rnet
 ```bash
-python scripts/gen_pnet_train.py -m output/pnet.torchm
+python scripts/gen_rnet_train.py -m output/pnet.torchm
 ```
 Train rnet
 ```bash

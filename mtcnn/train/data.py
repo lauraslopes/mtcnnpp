@@ -154,53 +154,44 @@ class MtcnnDataset(object):
         self.batch_size = batch_size
         # get classification and regression tasks data
         if net_stage == 'pnet':
-            # get landmarks data
-            self.landmark_data = get_landmark_data(
-                output_folder, suffix=suffix)
             self.data = get_training_data(output_folder, suffix=suffix)
         elif net_stage == 'rnet':
-            self.landmark_data = get_landmark_data(output_folder, suffix=suffix)
             self.data = get_training_data(output_folder, suffix=suffix)
         elif net_stage == 'onet':
-            self.landmark_data = get_landmark_data(output_folder, suffix=suffix)
             self.data = get_training_data(output_folder, suffix=suffix)
         else:
             raise AttributeError(
                 "Parameter 'net_stage' must be one of 'pnet', 'rnet' and 'onet' instead of %s." % net_stage)
 
         # Ensure the ratio of four kinds of data (pos, part, landmark, neg) is 1:1:1:3. (Follow the original paper)
-        min_len = int(min([len(self.data.pos), len(self.data.part), len(self.landmark_data.landmarks), len(self.data.neg) / 3]))
+        min_len = int(min([len(self.data.pos), len(self.data.part), len(self.data.neg) / 3]))
 
         self.pos = ImageMetaDataset(self.data.pos, self.data.pos_reg, max_len=min_len)
         self.part = ImageMetaDataset(self.data.part, self.data.part_reg, max_len=min_len)
         self.neg = ImageMetaDataset(self.data.neg, max_len=min_len * 3)
-        self.landm = ImageMetaDataset(self.landmark_data.images, self.landmark_data.landmarks, max_len=min_len)
 
         pos_len = len(self.pos)
         part_len = len(self.part)
         neg_len = len(self.neg)
-        landm_len = len(self.landm)
 
-        total_len = pos_len + part_len + neg_len + landm_len
+        total_len = pos_len + part_len + neg_len
 
         self.pos_batch = int(batch_size * (pos_len / total_len))
         self.part_batch = int(batch_size * (part_len / total_len))
         self.neg_batch = int(batch_size * (neg_len / total_len))
-        self.landm_batch = int(batch_size * (landm_len / total_len))
 
     def get_iter(self):
         pos_loader = DataLoader(self.pos, self.pos_batch, shuffle=True)
         part_loader = DataLoader(self.part, self.part_batch, shuffle=True)
         neg_loader = DataLoader(self.neg, self.neg_batch, shuffle=True)
-        landm_loader = DataLoader(self.landm, self.landm_batch, shuffle=True)
 
         transform = ToTensor()
 
         def generator():
 
-            for i in zip(pos_loader, part_loader, neg_loader, landm_loader):
+            for i in zip(pos_loader, part_loader, neg_loader):
                 yield i
 
-        total_batch = min([len(pos_loader), len(part_loader), len(neg_loader), len(landm_loader)])
+        total_batch = min([len(pos_loader), len(part_loader), len(neg_loader)])
 
         return generator(), total_batch

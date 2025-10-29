@@ -56,7 +56,7 @@ class _Net(nn.Module):
         if not self.is_train:
             self.eval()
 
-    def get_loss(self, x, gt_label, gt_boxes, gt_landmarks):
+    def get_loss(self, x, gt_label, gt_boxes):
         """
         Get total loss.
         Arguments:
@@ -72,20 +72,17 @@ class _Net(nn.Module):
                 "Method 'get_loss' is avaliable only when 'is_train' is True.")
 
         # Forward pass
-        pred_label, pred_offset, pred_landmarks = self.forward(x)
+        pred_label, pred_offse = self.forward(x)
 
         # Reshape the tensor
         pred_label = pred_label.view(-1, 2)
         pred_offset = pred_offset.view(-1, 4)
-        pred_landmarks = pred_landmarks.view(-1, 10)
 
         # Compute the loss
         cls_loss = self.cls_loss(gt_label, pred_label)
         box_loss = self.box_loss(gt_label, gt_boxes, pred_offset)
-        landmark_loss = self.landmark_loss(
-            gt_label, gt_landmarks, pred_landmarks)
 
-        return cls_loss + box_loss + landmark_loss
+        return cls_loss + box_loss
 
     def _init_net(self):
         raise NotImplementedError
@@ -201,19 +198,12 @@ class PNet(_Net):
             ('conv4-2', nn.Conv2d(32, 4, kernel_size=1, stride=1)),
         ]))
 
-        if self.is_train:
-            # landmark regression
-            self.landmarks = nn.Sequential(OrderedDict([
-                ('conv4-2', nn.Conv2d(32, 10, kernel_size=1, stride=1))
-            ]))
-
     def forward(self, x):
         feature_map = self.body(x)
         label = self.cls(feature_map)
         offset = self.box_offset(feature_map)
-        landmarks = self.landmarks(feature_map) if self.is_train else torch.empty(0, device=self.device)
 
-        return label, offset, landmarks
+        return label, offset
 
     def to_script(self):
         data = torch.randn((100, 3, 12, 12), device=self.device)

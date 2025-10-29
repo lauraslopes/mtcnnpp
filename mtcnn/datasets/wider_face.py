@@ -54,7 +54,7 @@ class WiderFace(object):
                     current_dict['num_bb'] -= 1
                 current_num += 1
 
-                if current_num == num:
+                if current_num == num or num == 0:
                     ret.append(current_dict)
                     flag = 0
                     current_num = 0

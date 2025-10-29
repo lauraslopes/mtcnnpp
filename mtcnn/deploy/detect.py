@@ -172,6 +172,9 @@ class FaceDetector(object):
         square_bboxes[:, 3] = square_bboxes[:, 1] + max_side - 1.0
 
         square_bboxes = torch.ceil(square_bboxes + 1).int()
+
+        # Resolve out of memory issue
+        torch.cuda.empty_cache()
         return square_bboxes
 
     def _refine_boxes(self, bboxes, w, h):
@@ -233,7 +236,7 @@ class FaceDetector(object):
         for w, h, f in scales:
             resize_img = torch.nn.functional.interpolate(
                 img, size=(w, h), mode='bilinear')
-            p_distribution, box_regs, _ = self.pnet(resize_img)
+            p_distribution, box_regs = self.pnet(resize_img)
 
             candidate, scores, offsets = self._generate_bboxes(
                 p_distribution, box_regs, f, threshold)

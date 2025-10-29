@@ -52,11 +52,11 @@ class Trainer(object):
             print("Evaluate on training data...")
             data_iter, total_batch = dataset.get_iter()
             result = self.eval(data_iter, total_batch)
-            print("Epoch %d, " % self.epoch_num, "result on training set: acc %f, precision %f, recall %f, f1 %f, avg_cls_loss %f, avg_box_loss %f, avg_landmark_loss %f" % result)
+            print("Epoch %d, " % self.epoch_num, "result on training set: acc %f, precision %f, recall %f, f1 %f, avg_cls_loss %f, avg_box_loss %f" % result)
 
             self.writer.add_scalars("training_set", {
                 i: j for i, j in 
-                zip(["acc", "precision", "recall", "f1", "avg_cls_loss", "avg_box_loss", "avg_landmark_loss"], result)
+                zip(["acc", "precision", "recall", "f1", "avg_cls_loss", "avg_box_loss"], result)
             }, global_step=self.epoch_num)
 
             print("Evaluate on eval data...")
@@ -65,9 +65,9 @@ class Trainer(object):
 
             self.writer.add_scalars("eval_set", {
                 i: j for i, j in 
-                zip(["acc", "precision", "recall", "f1", "avg_cls_loss", "avg_box_loss", "avg_landmark_loss"], result)
+                zip(["acc", "precision", "recall", "f1", "avg_cls_loss", "avg_box_loss"], result)
             }, global_step=self.epoch_num)
-            print("Epoch %d, " % self.epoch_num, "result on eval set: acc %f, precision %f, recall %f, f1 %f, avg_cls_loss %f, avg_box_loss %f, avg_landmark_loss %f" % result)
+            print("Epoch %d, " % self.epoch_num, "result on eval set: acc %f, precision %f, recall %f, f1 %f, avg_cls_loss %f, avg_box_loss %f" % result)
 
             self.save_state_dict()
 
@@ -89,11 +89,11 @@ class Trainer(object):
     def _train_batch(self, batch):
 
         # assemble batch
-        images, labels, boxes_reg, landmarks = self._assemble_batch(batch)
+        images, labels, boxes_reg = self._assemble_batch(batch)
 
         # train step
         self.optimizer.zero_grad()
-        loss = self.net.get_loss(images, labels, boxes_reg, landmarks)
+        loss = self.net.get_loss(images, labels, boxes_reg)
         loss.backward()
         self.optimizer.step()
 
@@ -102,28 +102,22 @@ class Trainer(object):
 
     def _assemble_batch(self, batch):
         # assemble batch
-        (pos_img, pos_reg), (part_img, part_reg), (neg_img, neg_reg), (landm_img, landm_reg) = batch
+        (pos_img, pos_reg), (part_img, part_reg), (neg_img, neg_reg) = batch
 
         # stack all images together
-        images = torch.cat([pos_img, part_img, neg_img, landm_img]).to(self.device)
+        images = torch.cat([pos_img, part_img, neg_img]).to(self.device)
 
-        # create labels for each image. 0 (neg), 1 (pos), 2 (part), 3(landmark)
+        # create labels for each image. 0 (neg), 1 (pos), 2 (part)
         pos_label = torch.ones(pos_img.shape[0], dtype=torch.long)
         part_label = torch.ones(part_img.shape[0], dtype=torch.long) * 2
         neg_label = torch.zeros(neg_img.shape[0], dtype=torch.long)
-        landm_label = torch.ones(landm_img.shape[0], dtype=torch.long) * 3
 
-        labels = torch.cat([pos_label, part_label, neg_label, landm_label]).to(self.device)
+        labels = torch.cat([pos_label, part_label, neg_label]).to(self.device)
 
         # stack boxes reg
-        fake_landm_data_box_reg = torch.zeros((landm_img.shape[0], 4), dtype=torch.float)
-        boxes_reg = torch.cat([pos_reg, part_reg, neg_reg, fake_landm_data_box_reg]).to(self.device)
+        boxes_reg = torch.cat([pos_reg, part_reg, neg_reg]).to(self.device)
 
-        # stack landmarks reg
-        fake_data_landm_reg = torch.zeros((pos_label.shape[0] + part_label.shape[0] + neg_label.shape[0], 10), dtype=torch.float)
-        landmarks = torch.cat([fake_data_landm_reg, landm_reg]).to(self.device)
-
-        return images, labels, boxes_reg, landmarks
+        return images, labels, boxes_reg
     
     def eval(self, data_iter, total_batch):
         total = 0
@@ -135,7 +129,6 @@ class Trainer(object):
 
         total_cls_loss = 0
         total_box_loss = 0
-        total_landmark_loss = 0
 
         bar = progressbar.ProgressBar(max_value=total_batch)
 
@@ -143,22 +136,19 @@ class Trainer(object):
             bar.update(i)
 
             # assemble batch
-            images, gt_label, gt_boxes, gt_landmarks = self._assemble_batch(batch)
+            images, gt_label, gt_boxes = self._assemble_batch(batch)
             
             # Forward pass
             with torch.no_grad():
-                pred_label, pred_offset, pred_landmarks = self.net.forward(images)
+                pred_label, pred_offset = self.net.forward(images)
 
             # Reshape the tensor
             pred_label = pred_label.view(-1, 2)
             pred_offset = pred_offset.view(-1, 4)
-            pred_landmarks = pred_landmarks.view(-1, 10)
 
             # Compute the loss
             total_cls_loss += self.net.cls_loss(gt_label, pred_label)
             total_box_loss += self.net.box_loss(gt_label, gt_boxes, pred_offset)
-            total_landmark_loss += self.net.landmark_loss(
-                gt_label, gt_landmarks, pred_landmarks)
 
             # compute the classification acc
             pred_label = torch.argmax(pred_label, dim=1)
@@ -184,9 +174,8 @@ class Trainer(object):
 
         avg_cls_loss = total_cls_loss / i
         avg_box_loss = total_box_loss / i
-        avg_landmark_loss = total_landmark_loss / i
 
-        return acc, precision, recall, f1, avg_cls_loss, avg_box_loss, avg_landmark_loss    
+        return acc, precision, recall, f1, avg_cls_loss, avg_box_loss
 
 
     def save_state_dict(self):
