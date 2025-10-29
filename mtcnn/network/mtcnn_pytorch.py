@@ -223,11 +223,11 @@ class RNet(_Net):
         self.body = nn.Sequential(OrderedDict([
             ('conv1', nn.Conv2d(3, 28, kernel_size=3, stride=1)),
             ('prelu1', nn.PReLU(28)),
-            ('pool1', nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True)),
+            ('pool1', nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)),
 
             ('conv2', nn.Conv2d(28, 48, kernel_size=3, stride=1)),
             ('prelu2', nn.PReLU(48)),
-            ('pool2', nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True)),
+            ('pool2', nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)),
 
             ('conv3', nn.Conv2d(48, 64, kernel_size=2, stride=1)),
             ('prelu3', nn.PReLU(64)),
@@ -247,12 +247,6 @@ class RNet(_Net):
             ('conv5-2', nn.Linear(128, 4))
         ]))
 
-        if self.is_train:
-            # lanbmark localization
-            self.landmarks = nn.Sequential(OrderedDict([
-                ('conv5-3', nn.Linear(128, 10))
-            ]))
-
     def forward(self, x):
         # backend
         x = self.body(x)
@@ -260,9 +254,8 @@ class RNet(_Net):
         # detection
         det = self.cls(x)
         box = self.box_offset(x)
-        landmarks = self.landmarks(x) if self.is_train else torch.empty(0, device=self.device)
 
-        return det, box, landmarks
+        return det, box
 
     def to_script(self):
         data = torch.randn((100, 3, 24, 24), device=self.device)
