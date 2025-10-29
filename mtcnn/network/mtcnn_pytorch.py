@@ -72,7 +72,7 @@ class _Net(nn.Module):
                 "Method 'get_loss' is avaliable only when 'is_train' is True.")
 
         # Forward pass
-        pred_label, pred_offse = self.forward(x)
+        pred_label, pred_offset = self.forward(x)
 
         # Reshape the tensor
         pred_label = pred_label.view(-1, 2)
@@ -233,7 +233,7 @@ class RNet(_Net):
             ('prelu3', nn.PReLU(64)),
 
             ('flatten', Flatten()),
-            ('conv4', nn.Linear(576, 128)),
+            ('conv4', nn.Linear(1024, 128)),
             ('prelu4', nn.PReLU(128))
         ]))
 
