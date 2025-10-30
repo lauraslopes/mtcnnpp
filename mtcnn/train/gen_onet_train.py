@@ -108,8 +108,12 @@ def generate_training_data_for_onet(pnet, rnet, meta_data, output_folder, crop_s
                 continue
 
             cropped_im = img[c_box[1]: c_box[3], c_box[0]: c_box[2], :]
-            resized_im = cv2.resize(
-                    cropped_im, (crop_size, crop_size), interpolation=cv2.INTER_LINEAR)
+            try:
+                resized_im = cv2.resize(
+                        cropped_im, (crop_size, crop_size), interpolation=cv2.INTER_LINEAR)
+            except Exception as e:
+                print(str(e))
+                continue
 
             iou = IoU(c_box, boxes)
             max_iou = iou.max()
