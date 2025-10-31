@@ -290,7 +290,7 @@ class ONet(_Net):
             ('prelu4', nn.PReLU(128)),
 
             ('flatten', Flatten()),
-            ('conv5', nn.Linear(1152, 256)),
+            ('conv5', nn.Linear(2048, 256)),
             ('drop5', nn.Dropout(0.25)),
             ('prelu5', nn.PReLU(256)),
         ]))
