@@ -57,10 +57,9 @@ class FaceDetector(object):
         img = self._preprocess(img)
         stage_one_boxes = self.stage_one(img, threshold[0], factor, minsize, nms_threshold[0])
         stage_two_boxes = self.stage_two(img, stage_one_boxes, threshold[1], nms_threshold[1])
-        stage_three_boxes, landmarks = self.stage_three(
-            img, stage_two_boxes, threshold[2], nms_threshold[2])
+        stage_three_boxes = self.stage_three(img, stage_two_boxes, threshold[2], nms_threshold[2])
 
-        return stage_three_boxes, landmarks
+        return stage_three_boxes
 
     def _generate_bboxes(self, probs, offsets, scale, threshold):
         """Generate bounding boxes at places
@@ -317,7 +316,7 @@ class FaceDetector(object):
         
         candidate_faces = torch.cat(candidate_faces, 0)
 
-        p_distribution, box_regs, landmarks = self.onet(candidate_faces)
+        p_distribution, box_regs = self.onet(candidate_faces)
 
         # filter negative boxes
         scores = p_distribution[:, 1]
@@ -325,19 +324,14 @@ class FaceDetector(object):
         boxes = boxes[mask]
         box_regs = box_regs[mask]
         scores = scores[mask]
-        landmarks = landmarks[mask]
 
         if boxes.shape[0] > 0:
 
-            # compute face landmark points
-            landmarks = self._calibrate_landmarks(boxes, landmarks)
-            landmarks = torch.stack([landmarks[:, :5], landmarks[:, 5:10]], 2)
             boxes = self._calibrate_box(boxes, box_regs)
             boxes = self._refine_boxes(boxes, width, height)
             
             # nms
             keep = func.nms(boxes.cpu().numpy(), scores.cpu().numpy(), nms_threshold, device=self.device)
             boxes = boxes[keep]
-            landmarks = landmarks[keep]
             
-        return boxes, landmarks
+        return boxes

@@ -11,35 +11,27 @@ import mtcnn.deploy.detect as detect
 import mtcnn.network.mtcnn_pytorch as mtcnn
 import mtcnn.utils.draw as draw
 
-here = os.path.dirname(__file__)
-
-
 class TestDetection(unittest.TestCase):
 
     def setUp(self):
-        weight_folder = os.path.join(here, '../output/converted')
+        weight_folder = os.path.abspath("../output")
 
         pnet = mtcnn.PNet()
         rnet = mtcnn.RNet()
         onet = mtcnn.ONet()
 
-        pnet.load_caffe_model(
-            np.load(os.path.join(weight_folder, 'pnet.npy'))[()])
-        rnet.load_caffe_model(
-            np.load(os.path.join(weight_folder, 'rnet.npy'))[()])
-        onet.load_caffe_model(
-            np.load(os.path.join(weight_folder, 'onet.npy'))[()])
+        pnet.load(os.path.join(weight_folder, 'pnet.npy'))
+        rnet.load(os.path.join(weight_folder, 'rnet.npy'))
+        onet.load(os.path.join(weight_folder, 'onet.npy'))
 
         self.detector = detect.FaceDetector(pnet, rnet, onet, "cuda:0")
-        self.test_img = os.path.join(here, 'asset/images/office5.jpg')
+        self.test_img = os.path.abspath("asset/images/office5.jpg")
 
     def test_detection(self):
         img = cv2.imread(self.test_img)
-        boxes, landmarks = self.detector.detect(self.test_img)
-        draw.draw_boxes2(img, boxes
-        )
-        draw.batch_draw_landmarks(img, landmarks)
-        cv2.imshow('Stage One Boxes', img)
+        boxes = self.detector.detect(self.test_img)
+        draw.draw_boxes2(img, boxes)
+        cv2.imshow('Detected Boxes', img)
         cv2.waitKey(0)
 
     def test_stage_one(self):
@@ -57,7 +49,7 @@ class TestDetection(unittest.TestCase):
         stage_one_boxes = self.detector.stage_one(norm_img, 0.6, 0.707, 12, 0.7)
         stage_two_boxes = self.detector.stage_two(norm_img, stage_one_boxes, 0.7, 0.7)
         draw.draw_boxes2(img, stage_two_boxes)
-        cv2.imshow('Stage One Boxes', img)
+        cv2.imshow('Stage Two Boxes', img)
         cv2.waitKey(0)
 
     def test_stage_three(self):
@@ -66,10 +58,9 @@ class TestDetection(unittest.TestCase):
         norm_img = self.detector._preprocess(self.test_img)
         stage_one_boxes = self.detector.stage_one(norm_img, 0.6, 0.707, 12, 0.7)
         stage_two_boxes = self.detector.stage_two(norm_img, stage_one_boxes, 0.7, 0.7)
-        stage_three_boxes, landmarks = self.detector.stage_three(norm_img, stage_two_boxes, 0.7, 0.3)
+        stage_three_boxes = self.detector.stage_three(norm_img, stage_two_boxes, 0.7, 0.3)
         draw.draw_boxes2(img, stage_three_boxes)
-        draw.batch_draw_landmarks(img, landmarks)
-        cv2.imshow('Stage One Boxes', img)
+        cv2.imshow('Stage Three Boxes', img)
         cv2.waitKey(0)
 
     def test_performance(self):

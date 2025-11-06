@@ -26,8 +26,9 @@ def draw_boxes2(img, boxes, color=(255, 0, 0)):
     """
     for box in boxes:
         # Default draw red box on it.
-        cv2.rectangle(img, (box[0], box[1]), (box[2], box[3]), color)
-    
+        nbox = box.cpu().numpy()
+        cv2.rectangle(img, (nbox[0], nbox[1]), (nbox[2], nbox[3]), color)
+
     return img
 
 def crop(img, boxes, landmarks=None):
