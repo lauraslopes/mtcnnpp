@@ -1,40 +1,28 @@
-# MTCNN
+# MTCNN++
 
 pytorch implementation of **inference and training stage** of face detection algorithm described in  
-[Joint Face Detection and Alignment using Multi-task Cascaded Convolutional Networks](https://arxiv.org/abs/1604.02878).
+[Joint Face Detection and Alignment using Multi-task Cascaded Convolutional Networks](https://arxiv.org/abs/1604.02878) and [MTCNN++: A CNN-based face detection algorithm inspired by MTCNN](https://link.springer.com/article/10.1007/s00371-023-02822-0)
 
 ## Why this projects
 
-[mtcnn-pytorch](https://github.com/TropComplique/mtcnn-pytorch) This is the most popular pytorch implementation of mtcnn. There are some disadvantages we found when using it for real-time detection task.
+There isn't an official implementation of MTCNN++, so we create this project forked from [mtcnn](https://github.com/BrightXiaoHan/FaceDetector) and adapted these features:
 
-- No training code.
-- Mix torch operation and numpy operation together, which resulting in slow inference speed.
-- No unified interface for setting computation device. ('cpu' or 'gpu')
-- Based on the old version of pytorch (0.2).
-
-So we create this project and add these features:
-
-- Add code for training stage, you can train model by your own datasets.
-- Transfer all numpy operation to torch operation, so that it can benefit from gpu acceleration. It's 10 times faster than the original repo [mtcnn-pytorch](https://github.com/TropComplique/mtcnn-pytorch).
-- Provide unified interface to assign 'cpu' or 'gpu'.
-- Based on the latest version of pytorch (1.0) and we will provide long-term support.
-- It's is a component of our [FaceLab](https://github.com/faciallab) ecosystem.
-- Real-time face tracking.
-- Friendly tutorial for beginner.
+- Modify PNet, RNet and ONet as described in the MTCNN++ article.
+- Removed facial landmarks detection.
 
 ## Installation
 
-### Create virtual env use conda (recommend)
+### Create virtual env (recommend)
 
 ```
-conda create -n face_detection python=3
-source activate face_detection
+python -m venv .venv
+source .venv/bin/activate
 ```
 
 ### Installation dependency package
 
 ```bash
-pip install opencv-python numpy easydict Cython progressbar2 torch tensorboardX
+pip install  \-r requirements.txt
 ```
 
 If you have gpu on your mechine, you can follow the [official instruction](https://pytorch.org/) and install pytorch gpu version.
@@ -86,12 +74,11 @@ detector = mtcnn.FaceDetector(pnet, rnet, onet, device='cuda:0')
 
 # Then we can detect faces from image
 img = 'tests/asset/images/office5.jpg'
-boxes, landmarks = detector.detect(img)
+boxes = detector.detect(img)
 
 # Then we draw bounding boxes and landmarks on image
 image = cv2.imread(img)
 image = mtcnn.utils.draw.draw_boxes2(image, boxes)
-image = mtcnn.utils.draw.batch_draw_landmarks(image, landmarks)
 
 # Show the result
 cv2.imshwow("Detected image.", image)
