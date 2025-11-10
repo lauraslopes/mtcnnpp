@@ -14,18 +14,18 @@ import mtcnn.utils.draw as draw
 class TestDetection(unittest.TestCase):
 
     def setUp(self):
-        weight_folder = os.path.abspath("../output")
+        weight_folder = os.path.abspath("output")
 
         pnet = mtcnn.PNet()
         rnet = mtcnn.RNet()
         onet = mtcnn.ONet()
 
-        pnet.load(os.path.join(weight_folder, 'pnet.npy'))
-        rnet.load(os.path.join(weight_folder, 'rnet.npy'))
-        onet.load(os.path.join(weight_folder, 'onet.npy'))
+        pnet.load(os.path.join(weight_folder, 'pnet.torchm'))
+        rnet.load(os.path.join(weight_folder, 'rnet.torchm'))
+        onet.load(os.path.join(weight_folder, 'onet.torchm'))
 
         self.detector = detect.FaceDetector(pnet, rnet, onet, "cuda:0")
-        self.test_img = os.path.abspath("asset/images/office5.jpg")
+        self.test_img = os.path.abspath("tests/asset/images/office5.jpg")
 
     def test_detection(self):
         img = cv2.imread(self.test_img)
